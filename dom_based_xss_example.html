@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <!-- 警告：このアプリケーションには多数の脆弱性が含まれています。トレーニングや検査ツールの試験目的でのみ使用してください。 -->
+        <meta charset="utf-8">
+        <title>DOM Based XSS Example</title>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <style>
+            h1:before {
+                content:"# ";
+            }
+            h2:before {
+                content:"## ";
+            }
+            h3:before {
+                content:"### ";
+            }
+            body > .dom-based-xss-field {
+                border: 2px solid #333;
+                margin: 1em;
+            }
+            .injection {
+                color: #d00;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>DOM Based XSS Example</h1>
+
+        <p>
+            <h2>DOM Based XSSの構成</h2>
+            DOM Based XSSは、主に以下の2つの要素から構成されます。
+            <ul>
+                <li>ソース: 攻撃者が用意したJavaScriptコードやWebサイトのURLなどの文字列を与える場所</li>
+                <li>シンク: ソースをHTMLに埋め込んだり、直接JavaScriptとして実行したりするための悪用箇所</li>
+            </ul>
+
+            <h3>DOM Based XSSのソースとして働く機能の代表例</h3>
+            <ul>
+                <li>location.hash</li>
+                <li>location.search</li>
+                <li>location.href</li>
+                <li>document.cookie</li>
+                <li>document.referrer</li>
+                <li>window.name</li>
+                <li>Web Storage</li>
+                <li>IndexedDB</li>
+                <li>XMLHttpRequest.responseText</li>
+            </ul>
+            
+            <h3>DOM Based XSSのシンクとして働く機能の代表例</h3>
+            <ul>
+                <li>HTMLElement.innerHTML</li>
+                <li>location.href</li>
+                <li>document.write</li>
+                <li>eval</li>
+                <li>setTimeout, setInterval</li>
+                <li>Function</li>
+                <li>jQuery(), $(), $.html()</li>
+            </ul>
+            
+            <h3>本Webページに存在するDOM Based XSSのソースとシンクの組み合わせ</h3>
+            詳細はこのページのソースコードを確認してください。
+            <ol>
+                <li>location.hash + HTMLElement.innerHTML</li>
+                <li>XMLHttpRequest.responseText + HTMLElement.innerHTML (+ location.href)</li>
+                <li>location.search + location.href</li>
+                <li>location.href + document.write</li>
+                <li>document.cookie + evel</li>
+                <li>jQuery(), $(), $.html() + Web Storage</li>
+                <li>setTimeout, setInterval + window.name</li>
+                <li>Function + document.referrer</li>
+            </ol>
+        </p>
+
+        <h2>DOM Based XSSフィールド</h2>
+        
+        <div class="dom-based-xss-field">location.hash: このページのURLのハッシュテキストは<span class="injection" id="location.hash"></span>です</div>
+        <div class="dom-based-xss-field">XMLHttpRequest.responseText: このページへのリクエストのレスポンスは<span class="injection" id="XMLHttpRequest.responseText"></span>です</div>
+        <div class="dom-based-xss-field">Web Storage: LocalStorageのキー"webStorageText"の内容は<span class="injection" id="Web-Storage"></span>です</div>
+
+        <script>
+            // 1. location.hash + HTMLElement.innerHTML
+            document.getElementById("location.hash").innerHTML = decodeURI(location.hash.substring(1));
+
+            // 2. XMLHttpRequest.responseText + HTMLElement.innerHTML (+ location.href)
+            const xhr = new XMLHttpRequest();
+            const thisBaseUrl = location.href.substr(0, location.href.indexOf('?'));
+            xhr.open('GET', thisBaseUrl, true);
+            xhr.responseType = 'text';
+            xhr.onload = function() {
+                if (xhr.readyState === xhr.DONE) {
+                    if (xhr.status === 200) {
+                        document.getElementById("XMLHttpRequest.responseText").innerHTML = xhr.responseText;
+                    }
+                }
+            };
+            xhr.send(null);
+
+            // 3. location.search + location.href
+            const queryUrl = document.location.search.substring(1)
+                .split("&")
+                .find(row => row.startsWith('url='));
+            if (queryUrl) {
+                document.write("3秒後に指定されたURLにリダイレクトします");
+                setTimeout(function() {
+                    location.href = queryUrl.split('=')[1];
+                }, 3000);
+            }
+
+            // 4. location.href + document.write
+            document.write('<div class="dom-based-xss-field">location.href: このページのURLは<span class="injection" id="location.href">' + decodeURI(location.href) + '</span>です</div>');
+
+            // 5. document.cookie + evel
+            if (document.cookie) {
+                const cookieScript = document.cookie
+                    .split('; ')
+                    .find(row => row.startsWith('script='));
+                if (cookieScript) {
+                    eval(cookieScript.split('=')[1]);
+                }
+            }
+
+            // 6. jQuery(), $(), $.html() + Web Storage
+            $("#Web-Storage").html(localStorage.getItem('webStorageText'));
+            
+            // 7. setTimeout, setInterval + window.name
+            setTimeout("console.log('window.nameは" + window.name + "です');", 0);
+
+            // 8. Function + document.referrer
+            Function("console.log('document.referrerは" + decodeURI(document.referrer) + "です')")();
+        </script>
+    </body>
+</html>

